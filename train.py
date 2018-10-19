@@ -16,7 +16,10 @@ for fn in os.listdir("Data"):
             break
         value = {'1/2-1/2':0, '0-1':-1, '1-0':1}[game.headers['Result']]
         board = game.board()
+        i = 0
         for move in game.main_line():
+            print(i) 
+            i += 1
             board.push(move)
             print(value, State(board).serialize()) 
     break

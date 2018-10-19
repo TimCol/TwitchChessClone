@@ -6,8 +6,13 @@ Zero Knowledge Chess Engine
 Definition: Value Network
 V = f(state)
 
+What is V?
+V = -1 Black wins board state
+V = 1 White wins board state
 
 State(Board):
+
+
 
 Pieces (2+(7*2)+1):
 * Universal

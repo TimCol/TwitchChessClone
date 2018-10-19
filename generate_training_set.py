@@ -7,57 +7,58 @@ import numpy as np
 from state import State
 import csv
 
-
-def read_csv(game=None):
+def read_csv():
     with open('Data/stockfish.csv', newline='') as csvfile:
+        scores = {}
         stockfishd = csv.DictReader(csvfile)
-        n = 0
+        gameCounter = 1
         for game in stockfishd:
-            n += 1
-            if n > 20: 
-                break
-            print(game['Event'])
-            i = 0
+            moveScore = []
             for score in game['MoveScores'].split(" "):
-                i += 1 
-                print("Game move %d, score is %d" % (i, int(score)))
+                moveScore.append(score)
+            scores[gameCounter] = moveScore
+            gameCounter += 1
+        return scores
 
-
-
-
-
-
-
+def normalize(x):
+    if x == "NA":
+        return 2 
+    elif int(x) >= 50:  
+        return 1 
+    elif int(x) <= -50:
+        return -1
+    elif -50 < int(x) < 50: 
+        return 0 
 
 def get_dataset(num_samples=None):
     X,Y = [], []
-    gn = 0 
-    values = {'1/2-1/2':0, '0-1':-1, '1-0':1}
-    # pgn files in the Data folder
-    for fn in os.listdir("Data"):
-        pgn = open(os.path.join("Data", fn))
-        while 1:
-            game = chess.pgn.read_game(pgn)
-            if game is None:
-                break
-            res = game.headers['Result']
-            if res not in values:
-                    print("%s not in values" & (res))
-                    continue
-            value = values[res]
-            board = game.board()
-            for move in game.main_line():
-                board.push(move)
-                ser = State(board).serialize()
-                X.append(ser)
-                Y.append(value)
-            print("parsing game number %d, got %d examples" % (gn, len(X)))
-            if num_samples is not None and len(X) > num_samples:
-                return X, Y
-            gn += 1
-        return X, Y
+    gn = 1 
+    pgn = open("Data/data.pgn")
+
+    while 1:
+        game = chess.pgn.read_game(pgn)
+        if game is None:
+            break
+        board = game.board()
+        mn = 0
+        for move in game.main_line():
+            board.push(move)
+            try:
+                score = normalize(scores[gn][mn])
+            except:
+                print("Error with Game %d" % gn)
+                pass
+            Y.append(score)
+            ser = State(board).serialize()
+            X.append(ser)
+            mn += 1
+        print("parsing game number %d, got %d examples" % (gn, len(X)))
+        if num_samples is not None and len(X) > num_samples:
+            return X, Y
+        gn += 1
+    return X, Y
 
 if __name__ == "__main__":
-    # X,Y = get_dataset(1000)
-    # np.savez("processed/dataset_25M.npz", X, Y)
-    read_csv(game=5)
+    scores = read_csv()
+    X,Y = get_dataset(1000000)
+    np.savez("processed/dataset.npz", X, Y)
